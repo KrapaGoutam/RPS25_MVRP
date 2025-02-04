@@ -1,0 +1,45 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle Routing</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Multi-Vehicle Routing Optimization</h1>
+
+    <label for="solver">Choose Solver:</label>
+    <select id="solver">
+        {% for solver in solver_options %}
+            <option value="{{ solver }}">{{ solver }}</option>
+        {% endfor %}
+    </select>
+
+    <button onclick="optimizeRoutes()">Optimize Routes</button>
+
+    <iframe id="mapFrame" src="static/optimized_map.html" width="800" height="500"></iframe>
+
+    <script>
+        function optimizeRoutes() {
+            const solver = document.getElementById("solver").value;
+
+            fetch("/generate_map", {
+                method: "POST",
+                body: new URLSearchParams({ solver }),
+                headers: { "Content-Type": "application/x-www-form-urlencoded" }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.map_url) {
+                    document.getElementById("mapFrame").src = data.map_url;
+                } else {
+                    console.error("Error: No map URL received!");
+                }
+            })
+            .catch(error => console.error("Fetch error:", error));
+        }
+    </script>
+</body>
+</html>

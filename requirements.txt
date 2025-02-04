@@ -1,0 +1,12 @@
+flask
+folium
+osmnx
+dash
+requests
+qiskit
+qiskit-optimization
+qiskit-ibm-runtime
+qiskit[visualization]
+matplotlib~=3.0
+mapclassify>=2.6.0
+scipy>=1.10.1,<2
