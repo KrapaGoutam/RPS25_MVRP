@@ -1,4 +1,4 @@
-# dash_html.py
+import time
 import dash
 from dash import html, dcc
 from dash.dependencies import Input, Output, State
@@ -38,7 +38,6 @@ def create_dash_app(flask_server):
         html.Div(id="output-status")
     ])
 
-    # Callback for route optimization
     @dash_app.callback(
         Output("map-display", "src"),
         Output("output-status", "children"),
@@ -49,14 +48,24 @@ def create_dash_app(flask_server):
     )
     def optimize_routes(n_clicks, solver, num_vehicles, num_clients):
         if n_clicks > 0:
-            response = requests.post("http://127.0.0.1:5000/generate_map", json={
-                "solver": solver,
-                "num_vehicles": num_vehicles,
-                "num_clients": num_clients
-            })
-            data = response.json()
-            return data["map_url"], "Optimization Complete! Map Updated."
+            try:
+                response = requests.post("http://127.0.0.1:5000/generate_map", json={
+                    "solver": solver,
+                    "num_vehicles": num_vehicles,
+                    "num_clients": num_clients
+                })
 
-        return "/static/optimized_map.html", "Waiting for optimization..."
+                if response.status_code != 200:
+                    return "/static/optimized_map.html", f"❌ Error: {response.json().get('error', 'Unknown error')}"
 
+                data = response.json()
+                print(f"✅ Dash received updated map: {data['map_url']}")
+
+                # Force refresh by adding a timestamp to the URL
+                new_map_url = f"{data['map_url']}?t={int(time.time())}"
+                return new_map_url, "✅ Optimization Complete! Map Updated."
+
+            except requests.exceptions.ConnectionError:
+                return "/static/optimized_map.html", "❌ API Connection Error. Is Flask running?"
+    
     return dash_app
