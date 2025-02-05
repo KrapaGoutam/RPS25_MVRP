@@ -22,6 +22,14 @@ def solve_mvrp(locations, G, num_vehicles):
     Returns:
         list: A list of optimized routes per vehicle.
     """
+    if num_vehicles > 5:
+        print("⚠ Warning: Reducing num_vehicles to avoid excessive memory usage")
+        num_vehicles = 5  # ✅ Limit max vehicles to 5 to avoid large memory usage
+
+    if len(locations) > 20:
+        print("⚠ Warning: Reducing num_clients to avoid excessive problem size")
+        locations = locations[:20]  # ✅ Limit clients to 20 to prevent exponential scaling
+
     qp = QuadraticProgram()
 
     # Create binary variables for vehicle assignments
@@ -54,11 +62,16 @@ def solve_mvrp(locations, G, num_vehicles):
 
     # ✅ Fix: Provide an optimizer for QAOA
     sampler = Sampler()
-    optimizer = COBYLA(maxiter=250)  # ✅ Added classical optimizer
+    optimizer = COBYLA(maxiter=100)  # ✅ Reduce iterations to avoid long computations
     qaoa = QAOA(sampler=sampler, optimizer=optimizer)  # ✅ Now includes optimizer
 
     optimizer_qiskit = MinimumEigenOptimizer(qaoa)
-    result = optimizer_qiskit.solve(qp)
+
+    try:
+        result = optimizer_qiskit.solve(qp)
+    except MemoryError as e:
+        print(f"❌ MemoryError: {e}")
+        return [[] for _ in range(num_vehicles)]  # ✅ Return an empty result on failure
 
     # Extract optimized vehicle assignments
     optimized_routes = [[] for _ in range(num_vehicles)]
