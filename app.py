@@ -18,8 +18,8 @@ def find_free_port():
     return port
 
 # Set dynamic ports if default ones are in use
-FLASK_PORT = int(os.environ.get("PORT", find_free_port()))
-DASH_PORT = find_free_port()
+FLASK_PORT = int(os.environ.get("PORT", 5000))
+DASH_PORT = 8050
 
 # Initialize Flask server
 server = Flask(__name__)

@@ -56,9 +56,7 @@ def create_dash_app(flask_server):
                 })
 
                 if response.status_code != 200:
-                    error_message = response.json().get('error', 'Unknown error')
-                    print(f"⚠ API Error: {error_message}")
-                    return "/static/optimized_map.html", f"❌ Error: {error_message}"
+                    return "/static/optimized_map.html", f"❌ Error: {response.json().get('error', 'Unknown error')}"
 
                 data = response.json()
                 print(f"✅ Dash received updated map: {data['map_url']}")
@@ -70,7 +68,5 @@ def create_dash_app(flask_server):
             except requests.exceptions.RequestException as e:
                 print(f"❌ API Request Failed: {e}")
                 return "/static/optimized_map.html", "❌ API Connection Error. Is Flask running?"
-        
-        return "/static/optimized_map.html", "⏳ Waiting for optimization..."
-
+    
     return dash_app
