@@ -4,6 +4,7 @@ from qiskit_optimization.algorithms import MinimumEigenOptimizer
 from qiskit_algorithms import QAOA
 from qiskit.primitives import Sampler
 from qiskit_ibm_runtime import QiskitRuntimeService
+from qiskit_algorithms.optimizers import COBYLA  # ✅ Added optimizer import
 import networkx as nx
 from app_configs import IBM_QUANTUM_TOKEN
 
@@ -33,7 +34,7 @@ def solve_mvrp(locations, G, num_vehicles):
     # Constraint: Each location must be visited exactly once
     for i in range(len(locations)):
         qp.linear_constraint(
-            linear={f"v{v}_loc{i}": 1 for v in range(num_vehicles)},  # ✅ FIXED: Use variable names
+            linear={f"v{v}_loc{i}": 1 for v in range(num_vehicles)},  
             sense="==",
             rhs=1,
             name=f"visit_loc_{i}"
@@ -47,23 +48,25 @@ def solve_mvrp(locations, G, num_vehicles):
                 if i != j and locations[i] in G and locations[j] in G[locations[i]]:
                     cost = G[locations[i]][locations[j]]["weight"]
                     var_name = f"v{v}_loc{i}"
-                    obj_expr[var_name] = obj_expr.get(var_name, 0) + cost  # ✅ FIXED: Use variable name
+                    obj_expr[var_name] = obj_expr.get(var_name, 0) + cost  
 
     qp.minimize(linear=obj_expr)
 
-    # Solve using QAOA
+    # ✅ Fix: Provide an optimizer for QAOA
     sampler = Sampler()
-    qaoa = QAOA(sampler=sampler)
-    optimizer = MinimumEigenOptimizer(qaoa)
-    result = optimizer.solve(qp)
+    optimizer = COBYLA(maxiter=250)  # ✅ Added classical optimizer
+    qaoa = QAOA(sampler=sampler, optimizer=optimizer)  # ✅ Now includes optimizer
+
+    optimizer_qiskit = MinimumEigenOptimizer(qaoa)
+    result = optimizer_qiskit.solve(qp)
 
     # Extract optimized vehicle assignments
     optimized_routes = [[] for _ in range(num_vehicles)]
-    solution = result.samples[0].x  # Extracting the best solution
+    solution = result.samples[0].x  
 
     for (v, i) in vehicle_vars:
         var_name = f"v{v}_loc{i}"
-        if solution[qp.get_variable_index(var_name)] == 1:  # ✅ FIXED: Use `get_variable_index(var_name)`
+        if solution[qp.get_variable_index(var_name)] == 1:  
             optimized_routes[v].append(locations[i])
 
     return optimized_routes
